@@ -1,0 +1,9 @@
+pandas
+python-dotenv
+requests
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+pyyaml
+pytest
