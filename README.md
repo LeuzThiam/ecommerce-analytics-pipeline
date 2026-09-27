@@ -5,7 +5,7 @@ Pipeline ETL multi-source construit en Python : extraction depuis 4 types de sou
 Projet réalisé en 3 versions progressives :
 
 - **V1 — Multi-Source ETL** *(terminée)* : extraction, validation, transformation et chargement en staging.
-- **V2 — Incremental & Reliable ETL** *(à venir)* : checkpoints, idempotence, transactions, retry.
+- **V2 — Incremental & Reliable ETL** *(en cours)* : suivi des exécutions, checkpoints, idempotence, transactions, retry.
 - **V3 — Automated Analytics Warehouse** *(à venir)* : star schema, data marts, réconciliation.
 
 ## Le problème
@@ -114,5 +114,6 @@ pytest -v
 
 ## Prochaines étapes
 
+- V2 : suivi des exécutions dans `control.pipeline_runs` *(terminé)*
 - V2 : chargement incrémental basé sur des checkpoints, UPSERT idempotent, gestion des pannes
 - V3 : star schema (`fact_sales`, `fact_sessions`), data marts, réconciliation source ↔ entrepôt
