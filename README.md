@@ -116,5 +116,7 @@ pytest -v
 
 - V2 : suivi des exécutions dans `control.pipeline_runs` *(terminé)*
 - V2 : stockage des checkpoints dans `control.etl_watermarks` *(terminé)*
-- V2 : chargement incrémental basé sur des checkpoints, UPSERT idempotent, gestion des pannes
+- V2 : extraction incrémentale paginée des commandes *(terminée)*
+- V2 : UPSERT transactionnel des commandes et mise à jour sécurisée du checkpoint *(terminé)*
+- V2 : traitement par chunks, retry et reprise après panne
 - V3 : star schema (`fact_sales`, `fact_sessions`), data marts, réconciliation source ↔ entrepôt
