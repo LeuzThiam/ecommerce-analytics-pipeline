@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from sqlalchemy import text
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Connection, Engine
 
 from src.control.pipeline_runs import PIPELINE_NAME
 
@@ -72,6 +72,27 @@ def update_watermark(
         raise ValueError("A watermark requires both last_created_at and last_id")
 
     ensure_watermarks_table(engine)
+    with engine.begin() as connection:
+        set_watermark(
+            connection,
+            source_name,
+            last_created_at,
+            last_id,
+            pipeline_name,
+        )
+
+
+def set_watermark(
+    connection: Connection,
+    source_name: str,
+    last_created_at: datetime,
+    last_id: int,
+    pipeline_name: str = PIPELINE_NAME,
+) -> None:
+    """Enregistre un checkpoint dans une transaction déjà ouverte."""
+    if last_created_at is None or last_id is None:
+        raise ValueError("A watermark requires both last_created_at and last_id")
+
     statement = text(
         """
         INSERT INTO control.etl_watermarks (
@@ -93,13 +114,12 @@ def update_watermark(
             updated_at = CURRENT_TIMESTAMP
         """
     )
-    with engine.begin() as connection:
-        connection.execute(
-            statement,
-            {
-                "pipeline_name": pipeline_name,
-                "source_name": source_name,
-                "last_created_at": last_created_at,
-                "last_id": last_id,
-            },
-        )
+    connection.execute(
+        statement,
+        {
+            "pipeline_name": pipeline_name,
+            "source_name": source_name,
+            "last_created_at": last_created_at,
+            "last_id": last_id,
+        },
+    )

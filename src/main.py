@@ -2,6 +2,7 @@ import logging
 import os
 from pathlib import Path
 
+import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
@@ -10,11 +11,12 @@ from src.control.pipeline_runs import (
     finish_pipeline_run,
     start_pipeline_run,
 )
+from src.control.watermarks import get_watermark
 from src.extract.api_extractor import extract_orders
 from src.extract.csv_extractor import extract_pageviews, extract_sessions
 from src.extract.json_extractor import extract_products
 from src.extract.sql_extractor import extract_order_items, extract_refunds
-from src.load.postgres_loader import load_to_staging
+from src.load.postgres_loader import load_to_staging, upsert_orders_with_watermark
 from src.transform.order_items import transform_order_items
 from src.transform.orders import transform_orders
 from src.transform.pageviews import transform_pageviews
@@ -76,15 +78,23 @@ def run() -> None:
         load_to_staging(transform_products(valid_products), "products", engine)
         metrics.record(len(products), len(valid_products), len(rejected_products))
 
-        orders = extract_orders(ORDERS_API_BASE_URL)
+        orders_watermark = get_watermark(engine, "orders")
+        orders = extract_orders(
+            ORDERS_API_BASE_URL,
+            created_after=orders_watermark.last_created_at,
+            after_id=orders_watermark.last_id,
+        )
         valid_orders, rejected_orders = validate_orders(orders)
         logger.info(f"orders: valid={len(valid_orders)} rejected={len(rejected_orders)}")
-        load_to_staging(transform_orders(valid_orders), "orders", engine)
+        upsert_orders_with_watermark(transform_orders(valid_orders), engine)
         metrics.record(len(orders), len(valid_orders), len(rejected_orders))
 
+        staged_order_ids = set(
+            pd.read_sql("SELECT order_id FROM staging.orders", engine)["order_id"]
+        )
         order_items = extract_order_items(engine)
         valid_items, rejected_items = validate_order_items(
-            order_items, set(valid_orders["order_id"]), set(valid_products["product_id"])
+            order_items, staged_order_ids, set(valid_products["product_id"])
         )
         logger.info(f"order_items: valid={len(valid_items)} rejected={len(rejected_items)}")
         load_to_staging(transform_order_items(valid_items), "order_items", engine)
