@@ -77,3 +77,19 @@ def test_list_orders_serializes_dates(sample_orders):
     )
 
     assert result["orders"][0]["created_at"] == "2026-01-01T10:00:00"
+
+
+def test_missing_orders_source_returns_service_unavailable(monkeypatch, tmp_path):
+    monkeypatch.setattr(orders_api, "orders_df", None)
+    monkeypatch.setattr(orders_api, "DATA_PATH", tmp_path / "missing-orders.csv")
+
+    with pytest.raises(HTTPException) as error:
+        orders_api.list_orders(
+            limit=10,
+            offset=0,
+            created_after=None,
+            after_id=None,
+        )
+
+    assert error.value.status_code == 503
+    assert error.value.detail == "Orders source file is unavailable"
