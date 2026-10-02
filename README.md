@@ -118,7 +118,7 @@ pytest -v
 - V2 : stockage des checkpoints dans `control.etl_watermarks` *(terminé)*
 - V2 : extraction incrémentale paginée des commandes *(terminée)*
 - V2 : UPSERT transactionnel des commandes et mise à jour sécurisée du checkpoint *(terminé)*
-- V2 : traitement par chunks
+- V2 : traitement des pageviews par chunks *(terminé)*
 - V2 : retry avec backoff exponentiel pour l'API Orders *(terminé)*
 - V2 : reprise après panne et tests de plusieurs exécutions
 - V3 : star schema (`fact_sales`, `fact_sessions`), data marts, réconciliation source ↔ entrepôt

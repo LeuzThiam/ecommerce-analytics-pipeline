@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 
 from src.control.pipeline_runs import (
     PipelineRunMetrics,
@@ -13,7 +14,7 @@ from src.control.pipeline_runs import (
 )
 from src.control.watermarks import get_watermark
 from src.extract.api_extractor import extract_orders
-from src.extract.csv_extractor import extract_pageviews, extract_sessions
+from src.extract.csv_extractor import extract_sessions, iter_pageview_chunks
 from src.extract.json_extractor import extract_products
 from src.extract.sql_extractor import extract_order_items, extract_refunds
 from src.load.postgres_loader import load_to_staging, upsert_orders_with_watermark
@@ -53,6 +54,34 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def process_pageview_chunks(engine: Engine, metrics: PipelineRunMetrics) -> None:
+    first_chunk = True
+
+    for chunk_number, pageviews in enumerate(
+        iter_pageview_chunks(DATA_SOURCE_DIR / "website_pageviews.csv"),
+        start=1,
+    ):
+        valid_pageviews, rejected_pageviews = validate_pageviews(pageviews)
+        logger.info(
+            "pageviews: chunk=%s valid=%s rejected=%s",
+            chunk_number,
+            len(valid_pageviews),
+            len(rejected_pageviews),
+        )
+        load_to_staging(
+            transform_pageviews(valid_pageviews),
+            "website_pageviews",
+            engine,
+            if_exists="replace" if first_chunk else "append",
+        )
+        metrics.record(
+            len(pageviews),
+            len(valid_pageviews),
+            len(rejected_pageviews),
+        )
+        first_chunk = False
+
+
 def run() -> None:
     engine = create_engine(POSTGRES_URL)
     metrics = PipelineRunMetrics()
@@ -66,11 +95,7 @@ def run() -> None:
         load_to_staging(transform_sessions(valid_sessions), "website_sessions", engine)
         metrics.record(len(sessions), len(valid_sessions), len(rejected_sessions))
 
-        pageviews = extract_pageviews(DATA_SOURCE_DIR / "website_pageviews.csv")
-        valid_pageviews, rejected_pageviews = validate_pageviews(pageviews)
-        logger.info(f"pageviews: valid={len(valid_pageviews)} rejected={len(rejected_pageviews)}")
-        load_to_staging(transform_pageviews(valid_pageviews), "website_pageviews", engine)
-        metrics.record(len(pageviews), len(valid_pageviews), len(rejected_pageviews))
+        process_pageview_chunks(engine, metrics)
 
         products = extract_products(DATA_SOURCE_DIR / "products.json")
         valid_products, rejected_products = validate_products(products)
