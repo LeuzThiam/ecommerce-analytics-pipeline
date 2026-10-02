@@ -102,7 +102,7 @@ def run() -> None:
 
         refunds = extract_refunds(engine)
         valid_refunds, rejected_refunds = validate_refunds(
-            refunds, set(valid_items["order_item_id"]), set(valid_orders["order_id"])
+            refunds, set(valid_items["order_item_id"]), staged_order_ids
         )
         logger.info(f"refunds: valid={len(valid_refunds)} rejected={len(rejected_refunds)}")
         load_to_staging(transform_refunds(valid_refunds), "order_item_refunds", engine)

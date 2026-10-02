@@ -79,6 +79,21 @@ def test_list_orders_serializes_dates(sample_orders):
     assert result["orders"][0]["created_at"] == "2026-01-01T10:00:00"
 
 
+def test_list_orders_preserves_fractional_seconds(sample_orders):
+    orders_api.orders_df.loc[0, "created_at"] = pd.Timestamp(
+        "2026-01-01 10:00:00.123456"
+    )
+
+    result = orders_api.list_orders(
+        limit=1,
+        offset=0,
+        created_after=None,
+        after_id=None,
+    )
+
+    assert result["orders"][0]["created_at"] == "2026-01-01T10:00:00.123456"
+
+
 def test_missing_orders_source_returns_service_unavailable(monkeypatch, tmp_path):
     monkeypatch.setattr(orders_api, "orders_df", None)
     monkeypatch.setattr(orders_api, "DATA_PATH", tmp_path / "missing-orders.csv")
