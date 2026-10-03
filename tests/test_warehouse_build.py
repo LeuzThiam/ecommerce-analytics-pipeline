@@ -52,6 +52,10 @@ def test_build_warehouse_respects_dependency_order():
             "src.warehouse.build.build_daily_performance",
             side_effect=lambda _: calls.append("daily_performance") or 1_109,
         ),
+        patch(
+            "src.warehouse.build.build_marketing_performance",
+            side_effect=lambda _: calls.append("marketing_performance") or 9,
+        ),
     ):
         result = build_warehouse(engine)
 
@@ -65,8 +69,9 @@ def test_build_warehouse_respects_dependency_order():
         "fact_sessions",
         "reconciliation",
         "daily_performance",
+        "marketing_performance",
     ]
-    assert result == WarehouseBuildResult(2, 4, 100, 9, 2, 40, 500, 1_109)
+    assert result == WarehouseBuildResult(2, 4, 100, 9, 2, 40, 500, 1_109, 9)
 
 
 def test_build_warehouse_stops_when_a_dimension_fails():

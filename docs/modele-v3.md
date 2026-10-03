@@ -188,3 +188,14 @@ incohérent.
 Les sessions, ventes et remboursements sont agrégés séparément avant leurs
 jointures. Les jours sans activité sont conservés avec des mesures nulles, ce
 qui facilite les séries temporelles continues.
+
+## Mart de performance marketing
+
+`marts.marketing_performance` fournit une ligne par combinaison de source,
+campagne, contenu et référent. Les ventes et remboursements sont rattachés au
+canal de la session d'origine grâce à `website_session_id`.
+
+Le mart expose les volumes de trafic et de vente, les taux de conversion et de
+rebond, la valeur moyenne des commandes, le revenu par session ainsi que le
+revenu et le profit nets. Les attributs marketing sont dénormalisés dans la
+table pour permettre une consommation directe par les outils de reporting.
