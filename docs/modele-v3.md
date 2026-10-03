@@ -128,3 +128,18 @@ La première réconciliation attend 40 025 articles et 1 731 articles remboursé
 
 `fact_sessions` utilisera la session web comme grain. Elle portera les métriques
 de navigation et de conversion nécessaires aux analyses marketing et funnel.
+
+Chaque session est reliée aux dimensions date, client, marketing et appareil.
+Les pages vues et les commandes sont agrégées séparément avant les jointures
+pour éviter de multiplier artificiellement les montants.
+
+Mesures et attributs principaux :
+
+- pages d'entrée et de sortie ;
+- nombre de pages vues et durée de navigation ;
+- indicateurs de répétition, rebond et conversion ;
+- nombre de commandes et d'articles achetés ;
+- chiffre d'affaires et marge brute de la session.
+
+La première réconciliation attend 472 871 sessions, 211 640 rebonds et 32 313
+sessions converties.
