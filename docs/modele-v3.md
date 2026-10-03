@@ -72,6 +72,23 @@ complète conserve aussi un éventuel acheteur absent de la source des sessions.
 La première validation réelle recense 394 318 utilisateurs, dont 31 696
 acheteurs.
 
+## Dimension marketing
+
+`warehouse.dim_marketing` contient une ligne par combinaison distincte de
+source, campagne, contenu et référent HTTP. Sa clé technique `marketing_key`
+sera portée par la future table `fact_sessions`.
+
+Les champs UTM absents sont remplacés par un libellé « non renseigné » et le
+référent absent par « aucun ». Cette normalisation permet de garantir l'unicité
+de la combinaison malgré le comportement des valeurs `NULL` dans PostgreSQL.
+L'indicateur `is_direct` identifie les sessions dont les trois attributs UTM et
+le référent HTTP sont absents. Les sessions sans UTM mais provenant d'un moteur
+de recherche restent ainsi distinguées du trafic réellement direct.
+
+La première construction réelle produit 9 combinaisons marketing. Le trafic
+sans UTM représente 83 328 sessions, dont 39 917 sessions réellement directes
+sur les 472 871 sessions disponibles.
+
 ## Tables de faits prévues
 
 ### Ventes

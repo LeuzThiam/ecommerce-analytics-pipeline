@@ -130,4 +130,5 @@ La validation réelle de deux exécutions consécutives est détaillée dans
 - V3 : définition des grains et construction de `warehouse.dim_date` *(terminée)*
 - V3 : construction idempotente de `warehouse.dim_product` *(terminée)*
 - V3 : construction agrégée de `warehouse.dim_customer` *(terminée)*
+- V3 : normalisation des acquisitions dans `warehouse.dim_marketing` *(terminée)*
 - V3 : star schema (`fact_sales`, `fact_sessions`), data marts, réconciliation source ↔ entrepôt
