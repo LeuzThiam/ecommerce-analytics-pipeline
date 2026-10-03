@@ -31,6 +31,7 @@ from src.validation.products_rules import validate_products
 from src.validation.quarantine import quarantine_rejected_rows
 from src.validation.refunds_rules import validate_refunds
 from src.validation.sessions_rules import validate_sessions
+from src.warehouse.build import build_warehouse
 
 DATA_SOURCE_DIR = Path(__file__).parent.parent / "data" / "source"
 LOG_DIR = Path(__file__).parent.parent / "logs"
@@ -195,6 +196,10 @@ def run() -> None:
         )
         load_to_staging(transform_refunds(valid_refunds), "order_item_refunds", engine)
         metrics.record(len(refunds), len(valid_refunds), len(rejected_refunds))
+
+        # Le warehouse n'est déclaré prêt qu'après toutes les sources validées.
+        warehouse_result = build_warehouse(engine)
+        logger.info("WAREHOUSE READY run_id=%s volumes=%s", run_id, warehouse_result)
 
         finish_pipeline_run(engine, run_id, "SUCCESS", metrics)
         logger.info(f"LOAD COMPLETED run_id={run_id}")
