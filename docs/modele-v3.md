@@ -89,6 +89,17 @@ La première construction réelle produit 9 combinaisons marketing. Le trafic
 sans UTM représente 83 328 sessions, dont 39 917 sessions réellement directes
 sur les 472 871 sessions disponibles.
 
+## Dimension appareil
+
+`warehouse.dim_device` contient une ligne par type d'appareil observé dans les
+sessions. Elle conserve le code métier `device_type`, lui associe un libellé
+français et expose l'indicateur `is_mobile` pour simplifier les analyses.
+
+La clé technique `device_key` sera portée par `fact_sessions`. Le chargement
+par UPSERT garantit qu'un nouveau type pourra être ajouté sans recréer les
+membres existants. La première construction produit deux lignes : `desktop`
+pour 327 027 sessions et `mobile` pour 145 844 sessions.
+
 ## Tables de faits prévues
 
 ### Ventes
