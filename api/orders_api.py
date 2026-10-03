@@ -29,8 +29,8 @@ def get_orders_df() -> pd.DataFrame:
 
 def serialize_orders(df: pd.DataFrame) -> list[dict]:
     serialized = df.copy()
-    serialized["created_at"] = serialized["created_at"].dt.strftime(
-        "%Y-%m-%dT%H:%M:%S"
+    serialized["created_at"] = serialized["created_at"].map(
+        lambda value: pd.Timestamp(value).isoformat()
     )
     return serialized.to_dict(orient="records")
 

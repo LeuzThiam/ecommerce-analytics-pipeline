@@ -2,7 +2,7 @@ import logging
 
 import pandas as pd
 from sqlalchemy import text
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Connection, Engine
 
 from src.control.watermarks import Watermark, ensure_watermarks_table, set_watermark
 
@@ -20,10 +20,6 @@ def upsert_orders_with_watermark(
     engine: Engine,
 ) -> Watermark | None:
     """Charge les commandes et avance leur checkpoint dans une même transaction."""
-    if df.empty:
-        logger.info("No new orders to load")
-        return None
-
     required_columns = {
         "order_id",
         "created_at",
@@ -40,6 +36,12 @@ def upsert_orders_with_watermark(
         missing = ", ".join(sorted(missing_columns))
         raise ValueError(f"Missing order columns for incremental load: {missing}")
 
+    if df.empty:
+        with engine.begin() as connection:
+            _ensure_orders_staging_table(df, connection)
+        logger.info("No new orders to load")
+        return None
+
     ordered = df.sort_values(["created_at", "order_id"])
     latest = ordered.iloc[-1]
     checkpoint = Watermark(
@@ -50,21 +52,7 @@ def upsert_orders_with_watermark(
 
     ensure_watermarks_table(engine)
     with engine.begin() as connection:
-        ordered.head(0).to_sql(
-            "orders",
-            connection,
-            schema="staging",
-            if_exists="append",
-            index=False,
-        )
-        connection.execute(
-            text(
-                """
-                CREATE UNIQUE INDEX IF NOT EXISTS ux_staging_orders_order_id
-                ON staging.orders (order_id)
-                """
-            )
-        )
+        _ensure_orders_staging_table(ordered, connection)
         connection.execute(
             text(
                 """
@@ -118,3 +106,24 @@ def upsert_orders_with_watermark(
         checkpoint.last_id,
     )
     return checkpoint
+
+
+def _ensure_orders_staging_table(
+    df: pd.DataFrame,
+    connection: Connection,
+) -> None:
+    df.head(0).to_sql(
+        "orders",
+        connection,
+        schema="staging",
+        if_exists="append",
+        index=False,
+    )
+    connection.execute(
+        text(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_staging_orders_order_id
+            ON staging.orders (order_id)
+            """
+        )
+    )

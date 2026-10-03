@@ -69,13 +69,30 @@ def test_upsert_orders_and_checkpoint_share_one_transaction(
 
 
 @patch("src.load.postgres_loader.ensure_watermarks_table")
-def test_empty_increment_does_not_open_transaction(mock_ensure_watermarks):
+@patch("src.load.postgres_loader.set_watermark")
+@patch("pandas.DataFrame.to_sql")
+def test_empty_first_increment_initializes_staging_without_advancing_checkpoint(
+    mock_to_sql,
+    mock_set_watermark,
+    mock_ensure_watermarks,
+):
     engine = MagicMock()
+    connection = engine.begin.return_value.__enter__.return_value
+    empty_orders = make_orders().iloc[0:0]
 
-    checkpoint = upsert_orders_with_watermark(pd.DataFrame(), engine)
+    checkpoint = upsert_orders_with_watermark(empty_orders, engine)
 
     assert checkpoint is None
-    engine.begin.assert_not_called()
+    engine.begin.assert_called_once_with()
+    mock_to_sql.assert_called_once_with(
+        "orders",
+        connection,
+        schema="staging",
+        if_exists="append",
+        index=False,
+    )
+    connection.execute.assert_called_once()
+    mock_set_watermark.assert_not_called()
     mock_ensure_watermarks.assert_not_called()
 
 
