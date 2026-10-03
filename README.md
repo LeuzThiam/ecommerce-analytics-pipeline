@@ -133,4 +133,5 @@ La validation réelle de deux exécutions consécutives est détaillée dans
 - V3 : normalisation des acquisitions dans `warehouse.dim_marketing` *(terminée)*
 - V3 : construction de `warehouse.dim_device` *(terminée)*
 - V3 : construction de `warehouse.fact_sales` au grain article *(terminée)*
-- V3 : `fact_sessions`, data marts, réconciliation source ↔ entrepôt
+- V3 : construction de `warehouse.fact_sessions` au grain session *(terminée)*
+- V3 : orchestration du warehouse, data marts, réconciliation source ↔ entrepôt
