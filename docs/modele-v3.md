@@ -210,3 +210,15 @@ Les indicateurs calculés comprennent le prix de vente moyen, le taux de marge
 brute, le taux de remboursement en unités et la part des articles additionnels.
 Les mesures nettes déduisent les remboursements du chiffre d'affaires et de la
 marge brute.
+
+## Mart de synthèse client
+
+`marts.customer_summary` fournit une ligne par utilisateur, y compris pour les
+prospects sans achat. Les sessions et les ventes sont agrégées séparément avant
+leur rattachement à `dim_customer`.
+
+Le mart expose la première et la dernière activité, le nombre de sessions,
+commandes et articles, le panier moyen, les remboursements, le revenu et le
+profit cumulés, ainsi que le délai entre première session et première commande.
+Le statut distingue les prospects, acheteurs et acheteurs récurrents. Cette
+table prépare les futures analyses de valeur client et de segmentation RFM.
