@@ -1,4 +1,5 @@
 import logging
+from typing import Literal
 
 import pandas as pd
 from sqlalchemy import text
@@ -9,9 +10,20 @@ from src.control.watermarks import Watermark, ensure_watermarks_table, set_water
 logger = logging.getLogger(__name__)
 
 
-def load_to_staging(df: pd.DataFrame, table_name: str, engine: Engine) -> None:
+def load_to_staging(
+    df: pd.DataFrame,
+    table_name: str,
+    engine: Engine,
+    if_exists: Literal["fail", "replace", "append"] = "replace",
+) -> None:
     logger.info(f"Loading {len(df)} rows into staging.{table_name}")
-    df.to_sql(table_name, engine, schema="staging", if_exists="replace", index=False)
+    df.to_sql(
+        table_name,
+        engine,
+        schema="staging",
+        if_exists=if_exists,
+        index=False,
+    )
     logger.info(f"Loaded staging.{table_name}")
 
 
