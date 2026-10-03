@@ -38,6 +38,21 @@ dates apparaissent dans le staging.
 La première construction réelle couvre la période du 19 mars 2012 au 1er avril
 2015, soit 1 109 jours calendaires.
 
+## Dimension produit
+
+`warehouse.dim_product` contient une ligne par produit métier présent dans
+`staging.products`. Elle sépare :
+
+- `product_key`, la clé technique générée par le warehouse et destinée aux
+  futures tables de faits ;
+- `product_id`, la clé naturelle provenant du système source ;
+- `product_name`, le libellé normalisé du catalogue ;
+- `created_at`, la date et l'heure de création du produit.
+
+La contrainte d'unicité sur `product_id` garantit le grain de la dimension.
+Son chargement utilise un UPSERT : une nouvelle exécution met à jour les
+attributs connus sans modifier la clé technique ni dupliquer le produit.
+
 ## Tables de faits prévues
 
 ### Ventes
