@@ -4,6 +4,7 @@ from src.validation.common_rules import is_unique, not_empty_string, not_null, s
 
 
 def validate_pageviews(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Valide l'identité, la session, l'URL et la date des pages consultées."""
     masks = [
         is_unique(df, "website_pageview_id"),
         not_null(df, "website_session_id"),

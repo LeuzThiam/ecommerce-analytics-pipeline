@@ -6,6 +6,11 @@ VALID_DEVICE_TYPES = {"desktop", "mobile"}
 
 
 def validate_sessions(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Valide les identifiants et le type d'appareil des sessions web.
+
+    Les champs marketing ne sont pas obligatoires : leur absence peut
+    représenter un trafic direct légitime.
+    """
     masks = [
         not_null(df, "website_session_id"),
         is_unique(df, "website_session_id"),
