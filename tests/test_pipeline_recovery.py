@@ -48,11 +48,11 @@ def test_failed_run_resumes_from_same_checkpoint(
     metrics = PipelineRunMetrics()
 
     with pytest.raises(RuntimeError, match="database unavailable"):
-        process_orders_incrementally(engine, metrics)
+        process_orders_incrementally(engine, metrics, "run-123")
 
     assert metrics == PipelineRunMetrics()
 
-    staged_order_ids = process_orders_incrementally(engine, metrics)
+    staged_order_ids = process_orders_incrementally(engine, metrics, "run-124")
 
     assert staged_order_ids == {100, 101}
     assert mock_extract_orders.call_args_list == [
@@ -90,7 +90,11 @@ def test_run_without_new_orders_keeps_existing_staging_ids(
     mock_read_sql.return_value = pd.DataFrame({"order_id": [100, 101]})
     metrics = PipelineRunMetrics()
 
-    staged_order_ids = process_orders_incrementally(MagicMock(), metrics)
+    staged_order_ids = process_orders_incrementally(
+        MagicMock(),
+        metrics,
+        "run-123",
+    )
 
     assert staged_order_ids == {100, 101}
     mock_upsert_orders.assert_called_once()
