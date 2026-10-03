@@ -82,6 +82,31 @@ def process_pageview_chunks(engine: Engine, metrics: PipelineRunMetrics) -> None
         first_chunk = False
 
 
+def process_orders_incrementally(
+    engine: Engine,
+    metrics: PipelineRunMetrics,
+) -> set[int]:
+    watermark = get_watermark(engine, "orders")
+    orders = extract_orders(
+        ORDERS_API_BASE_URL,
+        created_after=watermark.last_created_at,
+        after_id=watermark.last_id,
+    )
+    valid_orders, rejected_orders = validate_orders(orders)
+    logger.info(
+        "orders: valid=%s rejected=%s",
+        len(valid_orders),
+        len(rejected_orders),
+    )
+
+    upsert_orders_with_watermark(transform_orders(valid_orders), engine)
+    metrics.record(len(orders), len(valid_orders), len(rejected_orders))
+
+    return set(
+        pd.read_sql("SELECT order_id FROM staging.orders", engine)["order_id"]
+    )
+
+
 def run() -> None:
     engine = create_engine(POSTGRES_URL)
     metrics = PipelineRunMetrics()
@@ -103,20 +128,7 @@ def run() -> None:
         load_to_staging(transform_products(valid_products), "products", engine)
         metrics.record(len(products), len(valid_products), len(rejected_products))
 
-        orders_watermark = get_watermark(engine, "orders")
-        orders = extract_orders(
-            ORDERS_API_BASE_URL,
-            created_after=orders_watermark.last_created_at,
-            after_id=orders_watermark.last_id,
-        )
-        valid_orders, rejected_orders = validate_orders(orders)
-        logger.info(f"orders: valid={len(valid_orders)} rejected={len(rejected_orders)}")
-        upsert_orders_with_watermark(transform_orders(valid_orders), engine)
-        metrics.record(len(orders), len(valid_orders), len(rejected_orders))
-
-        staged_order_ids = set(
-            pd.read_sql("SELECT order_id FROM staging.orders", engine)["order_id"]
-        )
+        staged_order_ids = process_orders_incrementally(engine, metrics)
         order_items = extract_order_items(engine)
         valid_items, rejected_items = validate_order_items(
             order_items, staged_order_ids, set(valid_products["product_id"])

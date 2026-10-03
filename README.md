@@ -120,5 +120,5 @@ pytest -v
 - V2 : UPSERT transactionnel des commandes et mise à jour sécurisée du checkpoint *(terminé)*
 - V2 : traitement des pageviews par chunks *(terminé)*
 - V2 : retry avec backoff exponentiel pour l'API Orders *(terminé)*
-- V2 : reprise après panne et tests de plusieurs exécutions
+- V2 : reprise après panne et tests de plusieurs exécutions *(terminé)*
 - V3 : star schema (`fact_sales`, `fact_sessions`), data marts, réconciliation source ↔ entrepôt
