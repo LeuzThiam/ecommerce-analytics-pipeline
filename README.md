@@ -138,4 +138,4 @@ La validation réelle de deux exécutions consécutives est détaillée dans
 - V3 : réconciliation automatisée source ↔ entrepôt *(terminée)*
 - V3 : mart quotidien trafic, conversion et rentabilité *(terminé)*
 - V3 : mart de performance par canal marketing *(terminé)*
-- V3 : mart de performance par produit
+- V3 : mart de performance par produit *(terminé)*

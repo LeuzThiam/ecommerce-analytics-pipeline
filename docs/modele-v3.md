@@ -199,3 +199,14 @@ Le mart expose les volumes de trafic et de vente, les taux de conversion et de
 rebond, la valeur moyenne des commandes, le revenu par session ainsi que le
 revenu et le profit nets. Les attributs marketing sont dénormalisés dans la
 table pour permettre une consommation directe par les outils de reporting.
+
+## Mart de performance produit
+
+`marts.product_performance` fournit une ligne par produit du catalogue, y
+compris lorsqu'aucune vente n'existe. Il expose les commandes, unités vendues,
+articles principaux et additionnels, ventes, coûts, marges et remboursements.
+
+Les indicateurs calculés comprennent le prix de vente moyen, le taux de marge
+brute, le taux de remboursement en unités et la part des articles additionnels.
+Les mesures nettes déduisent les remboursements du chiffre d'affaires et de la
+marge brute.
