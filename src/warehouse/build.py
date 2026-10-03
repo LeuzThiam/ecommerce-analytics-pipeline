@@ -10,6 +10,7 @@ from src.warehouse.dim_marketing import build_dim_marketing
 from src.warehouse.dim_product import build_dim_product
 from src.warehouse.fact_sales import build_fact_sales
 from src.warehouse.fact_sessions import build_fact_sessions
+from src.warehouse.reconciliation import reconcile_warehouse
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,7 @@ def build_warehouse(engine: Engine) -> WarehouseBuildResult:
     dim_device_rows = build_dim_device(engine)
     fact_sales_rows = build_fact_sales(engine)
     fact_sessions_rows = build_fact_sessions(engine)
+    reconciliation = reconcile_warehouse(engine)
 
     result = WarehouseBuildResult(
         dim_date=dim_date_rows,
@@ -53,5 +55,6 @@ def build_warehouse(engine: Engine) -> WarehouseBuildResult:
         fact_sales=fact_sales_rows,
         fact_sessions=fact_sessions_rows,
     )
+    logger.info("WAREHOUSE RECONCILIATION checks=%s", reconciliation.checks)
     logger.info("WAREHOUSE BUILD COMPLETED volumes=%s", result)
     return result

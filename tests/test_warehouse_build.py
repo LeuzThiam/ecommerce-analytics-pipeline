@@ -44,6 +44,10 @@ def test_build_warehouse_respects_dependency_order():
             "src.warehouse.build.build_fact_sessions",
             side_effect=lambda _: calls.append("fact_sessions") or 500,
         ),
+        patch(
+            "src.warehouse.build.reconcile_warehouse",
+            side_effect=lambda _: calls.append("reconciliation") or MagicMock(),
+        ),
     ):
         result = build_warehouse(engine)
 
@@ -55,6 +59,7 @@ def test_build_warehouse_respects_dependency_order():
         "dim_device",
         "fact_sales",
         "fact_sessions",
+        "reconciliation",
     ]
     assert result == WarehouseBuildResult(2, 4, 100, 9, 2, 40, 500)
 
