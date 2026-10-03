@@ -136,4 +136,5 @@ La validation réelle de deux exécutions consécutives est détaillée dans
 - V3 : construction de `warehouse.fact_sessions` au grain session *(terminée)*
 - V3 : orchestration automatique du warehouse *(terminée)*
 - V3 : réconciliation automatisée source ↔ entrepôt *(terminée)*
-- V3 : data marts analytiques
+- V3 : mart quotidien trafic, conversion et rentabilité *(terminé)*
+- V3 : marts par canal marketing et par produit

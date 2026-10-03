@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from sqlalchemy.engine import Engine
 
+from src.marts.daily_performance import build_daily_performance
 from src.warehouse.dim_customer import build_dim_customer
 from src.warehouse.dim_date import build_dim_date_from_staging
 from src.warehouse.dim_device import build_dim_device
@@ -26,6 +27,7 @@ class WarehouseBuildResult:
     dim_device: int
     fact_sales: int
     fact_sessions: int
+    daily_performance: int
 
 
 def build_warehouse(engine: Engine) -> WarehouseBuildResult:
@@ -45,6 +47,7 @@ def build_warehouse(engine: Engine) -> WarehouseBuildResult:
     fact_sales_rows = build_fact_sales(engine)
     fact_sessions_rows = build_fact_sessions(engine)
     reconciliation = reconcile_warehouse(engine)
+    daily_performance_rows = build_daily_performance(engine)
 
     result = WarehouseBuildResult(
         dim_date=dim_date_rows,
@@ -54,6 +57,7 @@ def build_warehouse(engine: Engine) -> WarehouseBuildResult:
         dim_device=dim_device_rows,
         fact_sales=fact_sales_rows,
         fact_sessions=fact_sessions_rows,
+        daily_performance=daily_performance_rows,
     )
     logger.info("WAREHOUSE RECONCILIATION checks=%s", reconciliation.checks)
     logger.info("WAREHOUSE BUILD COMPLETED volumes=%s", result)
