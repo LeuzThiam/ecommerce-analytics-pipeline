@@ -6,6 +6,11 @@ from src.validation.common_rules import is_in_set, is_non_negative, is_unique, s
 def validate_order_items(
     df: pd.DataFrame, valid_order_ids: set, valid_product_ids: set
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Valide les articles et leurs relations avec commandes et produits.
+
+    Les ensembles d'identifiants représentent les référentiels déjà validés
+    auxquels chaque article doit appartenir.
+    """
     masks = [
         is_unique(df, "order_item_id"),
         is_in_set(df, "order_id", valid_order_ids),
