@@ -161,3 +161,15 @@ les dépendances de clés étrangères :
 Une exécution n'est marquée `SUCCESS` dans `control.pipeline_runs` qu'après la
 réussite du warehouse. Chaque table conserve sa propre transaction afin de ne
 pas maintenir une transaction globale pendant les agrégations volumineuses.
+
+## Réconciliation automatique
+
+Après la construction des faits, neuf contrôles comparent le staging et le
+warehouse : volumes des sessions, pages vues, commandes et articles, ventes et
+marges des deux tables de faits, ainsi que les remboursements.
+
+Les montants flottants du staging sont arrondis à deux décimales avant leur
+comparaison avec les colonnes `NUMERIC` du warehouse. Le moindre écart lève une
+erreur détaillant la mesure attendue et la valeur obtenue. Le pipeline ne peut
+donc pas annoncer un succès avec un warehouse incomplet ou financièrement
+incohérent.
