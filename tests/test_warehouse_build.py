@@ -48,6 +48,10 @@ def test_build_warehouse_respects_dependency_order():
             "src.warehouse.build.reconcile_warehouse",
             side_effect=lambda _: calls.append("reconciliation") or MagicMock(),
         ),
+        patch(
+            "src.warehouse.build.build_daily_performance",
+            side_effect=lambda _: calls.append("daily_performance") or 1_109,
+        ),
     ):
         result = build_warehouse(engine)
 
@@ -60,8 +64,9 @@ def test_build_warehouse_respects_dependency_order():
         "fact_sales",
         "fact_sessions",
         "reconciliation",
+        "daily_performance",
     ]
-    assert result == WarehouseBuildResult(2, 4, 100, 9, 2, 40, 500)
+    assert result == WarehouseBuildResult(2, 4, 100, 9, 2, 40, 500, 1_109)
 
 
 def test_build_warehouse_stops_when_a_dimension_fails():

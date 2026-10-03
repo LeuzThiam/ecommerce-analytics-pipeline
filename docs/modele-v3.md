@@ -173,3 +173,18 @@ comparaison avec les colonnes `NUMERIC` du warehouse. Le moindre écart lève un
 erreur détaillant la mesure attendue et la valeur obtenue. Le pipeline ne peut
 donc pas annoncer un succès avec un warehouse incomplet ou financièrement
 incohérent.
+
+## Mart de performance quotidienne
+
+`marts.daily_performance` fournit une ligne par date de `dim_date`, prête à
+être consommée par un tableau de bord. Elle combine sans double comptage :
+
+- sessions, visiteurs, pages vues, rebonds et conversions ;
+- commandes et articles achetés ;
+- ventes, marge brute et valeur moyenne des commandes ;
+- remboursements à leur date effective ;
+- revenu net, profit net, taux de conversion et taux de rebond.
+
+Les sessions, ventes et remboursements sont agrégés séparément avant leurs
+jointures. Les jours sans activité sont conservés avec des mesures nulles, ce
+qui facilite les séries temporelles continues.
