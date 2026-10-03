@@ -108,6 +108,22 @@ pour 327 027 sessions et `mobile` pour 145 844 sessions.
 d'analyser correctement les produits, les coûts, la marge et les remboursements
 sans agréger prématurément les commandes contenant plusieurs articles.
 
+La table relie chaque article aux dimensions date, produit et client. Les
+identifiants de commande, de session et d'article restent disponibles comme
+dimensions dégénérées pour les analyses détaillées.
+
+Mesures stockées :
+
+- prix de vente et coût de revient ;
+- marge brute ;
+- montant remboursé ;
+- revenu net et profit net après remboursement ;
+- indicateurs d'article principal et d'article remboursé.
+
+Les remboursements sont agrégés par article avant le chargement afin de
+préserver le grain même si plusieurs remboursements apparaissent ultérieurement.
+La première réconciliation attend 40 025 articles et 1 731 articles remboursés.
+
 ### Sessions
 
 `fact_sessions` utilisera la session web comme grain. Elle portera les métriques
