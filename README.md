@@ -18,10 +18,10 @@ Une entreprise e-commerce reçoit ses données depuis plusieurs systèmes qui ne
                 SOURCES
  CSV ──────┐
  JSON ─────┤
- API ──────┼────→ EXTRACT ──→ VALIDATE ──→ TRANSFORM ──→ LOAD
- SQL ──────┘                                                │
-                                                             ↓
-                                                   PostgreSQL (staging)
+ API ──────┼────→ EXTRACT ──→ VALIDATE ──→ TRANSFORM ──→ STAGING
+ SQL ──────┘                                                   │
+                                                                ↓
+                                                   DIMENSIONS ──→ FAITS
 ```
 
 Chaque type de source a son propre extracteur (`src/extract/`), chaque entité a ses propres règles de validation (`src/validation/`) et sa propre transformation (`src/transform/`), et un loader générique unique (`src/load/`) écrit le résultat dans PostgreSQL. `src/main.py` orchestre l'ensemble.
@@ -134,4 +134,5 @@ La validation réelle de deux exécutions consécutives est détaillée dans
 - V3 : construction de `warehouse.dim_device` *(terminée)*
 - V3 : construction de `warehouse.fact_sales` au grain article *(terminée)*
 - V3 : construction de `warehouse.fact_sessions` au grain session *(terminée)*
-- V3 : orchestration du warehouse, data marts, réconciliation source ↔ entrepôt
+- V3 : orchestration automatique du warehouse *(terminée)*
+- V3 : data marts et réconciliation automatisée source ↔ entrepôt

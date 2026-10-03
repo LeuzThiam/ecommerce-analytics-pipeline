@@ -143,3 +143,21 @@ Mesures et attributs principaux :
 
 La première réconciliation attend 472 871 sessions, 211 640 rebonds et 32 313
 sessions converties.
+
+## Orchestration du warehouse
+
+La construction du schéma en étoile est déclenchée automatiquement après le
+chargement et la validation de toutes les sources du staging. L'ordre respecte
+les dépendances de clés étrangères :
+
+1. `dim_date` ;
+2. `dim_product` ;
+3. `dim_customer` ;
+4. `dim_marketing` ;
+5. `dim_device` ;
+6. `fact_sales` ;
+7. `fact_sessions`.
+
+Une exécution n'est marquée `SUCCESS` dans `control.pipeline_runs` qu'après la
+réussite du warehouse. Chaque table conserve sa propre transaction afin de ne
+pas maintenir une transaction globale pendant les agrégations volumineuses.
