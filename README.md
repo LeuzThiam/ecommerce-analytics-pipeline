@@ -128,4 +128,5 @@ La validation réelle de deux exécutions consécutives est détaillée dans
 - V2 : tests de panne des sources CSV, JSON et PostgreSQL *(terminé)*
 - V2 : validation réelle de deux exécutions consécutives *(terminée)*
 - V3 : définition des grains et construction de `warehouse.dim_date` *(terminée)*
+- V3 : construction idempotente de `warehouse.dim_product` *(terminée)*
 - V3 : star schema (`fact_sales`, `fact_sessions`), data marts, réconciliation source ↔ entrepôt
