@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import datetime
 
 import pandas as pd
@@ -23,9 +24,15 @@ def extract_orders(
     page_size: int = 1000,
     created_after: datetime | None = None,
     after_id: int | None = None,
+    max_attempts: int = 3,
+    retry_delay_seconds: float = 1.0,
 ) -> pd.DataFrame:
     if (created_after is None) != (after_id is None):
         raise ValueError("created_after and after_id must be provided together")
+    if max_attempts <= 0:
+        raise ValueError("max_attempts must be greater than zero")
+    if retry_delay_seconds < 0:
+        raise ValueError("retry_delay_seconds cannot be negative")
 
     logger.info(
         "Extracting orders from %s created_after=%s after_id=%s",
@@ -43,12 +50,12 @@ def extract_orders(
             params["created_after"] = created_after.isoformat()
             params["after_id"] = after_id
 
-        response = requests.get(
+        response = _request_orders_page(
             f"{base_url}/orders",
-            params=params,
-            timeout=30,
+            params,
+            max_attempts,
+            retry_delay_seconds,
         )
-        response.raise_for_status()
         payload = response.json()
         orders = payload["orders"]
         all_orders.extend(orders)
@@ -60,3 +67,47 @@ def extract_orders(
     df = pd.DataFrame(all_orders, columns=ORDER_COLUMNS)
     logger.info("Extracted %s orders", len(df))
     return df
+
+
+def _request_orders_page(
+    url: str,
+    params: dict,
+    max_attempts: int,
+    retry_delay_seconds: float,
+) -> requests.Response:
+    for attempt in range(1, max_attempts + 1):
+        try:
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            return response
+        except requests.RequestException as error:
+            status_code = (
+                error.response.status_code
+                if error.response is not None
+                else None
+            )
+            is_temporary = isinstance(
+                error,
+                (requests.Timeout, requests.ConnectionError),
+            ) or (status_code is not None and 500 <= status_code < 600)
+
+            if not is_temporary or attempt == max_attempts:
+                logger.error(
+                    "Orders API request failed attempt=%s/%s status=%s",
+                    attempt,
+                    max_attempts,
+                    status_code,
+                )
+                raise
+
+            delay = retry_delay_seconds * (2 ** (attempt - 1))
+            logger.warning(
+                "Orders API request failed attempt=%s/%s status=%s retry_in=%ss",
+                attempt,
+                max_attempts,
+                status_code,
+                delay,
+            )
+            time.sleep(delay)
+
+    raise RuntimeError("Orders API retry loop ended unexpectedly")
