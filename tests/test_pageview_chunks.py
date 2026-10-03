@@ -31,8 +31,13 @@ def test_iter_pageview_chunks_rejects_invalid_size(tmp_path):
 
 
 @patch("src.main.load_to_staging")
+@patch("src.main.quarantine_rejected_rows")
 @patch("src.main.iter_pageview_chunks")
-def test_process_pageview_chunks_replaces_then_appends(mock_chunks, mock_load):
+def test_process_pageview_chunks_replaces_then_appends(
+    mock_chunks,
+    mock_quarantine,
+    mock_load,
+):
     mock_chunks.return_value = iter(
         [
             pd.DataFrame(
@@ -56,7 +61,7 @@ def test_process_pageview_chunks_replaces_then_appends(mock_chunks, mock_load):
     engine = MagicMock()
     metrics = PipelineRunMetrics()
 
-    process_pageview_chunks(engine, metrics)
+    process_pageview_chunks(engine, metrics, "run-123")
 
     assert mock_load.call_count == 2
     assert mock_load.call_args_list[0].kwargs["if_exists"] == "replace"
@@ -64,3 +69,4 @@ def test_process_pageview_chunks_replaces_then_appends(mock_chunks, mock_load):
     assert metrics.rows_extracted == 3
     assert metrics.rows_loaded == 3
     assert metrics.rows_rejected == 0
+    assert mock_quarantine.call_count == 2

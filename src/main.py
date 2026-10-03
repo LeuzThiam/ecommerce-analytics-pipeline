@@ -28,11 +28,13 @@ from src.validation.order_items_rules import validate_order_items
 from src.validation.orders_rules import validate_orders
 from src.validation.pageviews_rules import validate_pageviews
 from src.validation.products_rules import validate_products
+from src.validation.quarantine import quarantine_rejected_rows
 from src.validation.refunds_rules import validate_refunds
 from src.validation.sessions_rules import validate_sessions
 
 DATA_SOURCE_DIR = Path(__file__).parent.parent / "data" / "source"
 LOG_DIR = Path(__file__).parent.parent / "logs"
+REJECTED_DIR = Path(__file__).parent.parent / "data" / "rejected"
 LOG_DIR.mkdir(exist_ok=True)
 
 load_dotenv()
@@ -54,7 +56,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def process_pageview_chunks(engine: Engine, metrics: PipelineRunMetrics) -> None:
+def process_pageview_chunks(
+    engine: Engine,
+    metrics: PipelineRunMetrics,
+    run_id: str,
+) -> None:
     """Valide, transforme et charge les pageviews lot par lot."""
     first_chunk = True
 
@@ -68,6 +74,12 @@ def process_pageview_chunks(engine: Engine, metrics: PipelineRunMetrics) -> None
             chunk_number,
             len(valid_pageviews),
             len(rejected_pageviews),
+        )
+        quarantine_rejected_rows(
+            rejected_pageviews,
+            "website_pageviews",
+            run_id,
+            REJECTED_DIR,
         )
         # Le premier lot reconstruit la table ; les suivants la complètent.
         load_to_staging(
@@ -87,6 +99,7 @@ def process_pageview_chunks(engine: Engine, metrics: PipelineRunMetrics) -> None
 def process_orders_incrementally(
     engine: Engine,
     metrics: PipelineRunMetrics,
+    run_id: str,
 ) -> set[int]:
     """Traite les nouvelles commandes et retourne tous les IDs déjà chargés.
 
@@ -104,6 +117,12 @@ def process_orders_incrementally(
         "orders: valid=%s rejected=%s",
         len(valid_orders),
         len(rejected_orders),
+    )
+    quarantine_rejected_rows(
+        rejected_orders,
+        "orders",
+        run_id,
+        REJECTED_DIR,
     )
 
     upsert_orders_with_watermark(transform_orders(valid_orders), engine)
@@ -125,23 +144,41 @@ def run() -> None:
         sessions = extract_sessions(DATA_SOURCE_DIR / "website_sessions.csv")
         valid_sessions, rejected_sessions = validate_sessions(sessions)
         logger.info(f"sessions: valid={len(valid_sessions)} rejected={len(rejected_sessions)}")
+        quarantine_rejected_rows(
+            rejected_sessions,
+            "website_sessions",
+            run_id,
+            REJECTED_DIR,
+        )
         load_to_staging(transform_sessions(valid_sessions), "website_sessions", engine)
         metrics.record(len(sessions), len(valid_sessions), len(rejected_sessions))
 
-        process_pageview_chunks(engine, metrics)
+        process_pageview_chunks(engine, metrics, run_id)
 
         products = extract_products(DATA_SOURCE_DIR / "products.json")
         valid_products, rejected_products = validate_products(products)
         logger.info(f"products: valid={len(valid_products)} rejected={len(rejected_products)}")
+        quarantine_rejected_rows(
+            rejected_products,
+            "products",
+            run_id,
+            REJECTED_DIR,
+        )
         load_to_staging(transform_products(valid_products), "products", engine)
         metrics.record(len(products), len(valid_products), len(rejected_products))
 
-        staged_order_ids = process_orders_incrementally(engine, metrics)
+        staged_order_ids = process_orders_incrementally(engine, metrics, run_id)
         order_items = extract_order_items(engine)
         valid_items, rejected_items = validate_order_items(
             order_items, staged_order_ids, set(valid_products["product_id"])
         )
         logger.info(f"order_items: valid={len(valid_items)} rejected={len(rejected_items)}")
+        quarantine_rejected_rows(
+            rejected_items,
+            "order_items",
+            run_id,
+            REJECTED_DIR,
+        )
         load_to_staging(transform_order_items(valid_items), "order_items", engine)
         metrics.record(len(order_items), len(valid_items), len(rejected_items))
 
@@ -150,6 +187,12 @@ def run() -> None:
             refunds, set(valid_items["order_item_id"]), staged_order_ids
         )
         logger.info(f"refunds: valid={len(valid_refunds)} rejected={len(rejected_refunds)}")
+        quarantine_rejected_rows(
+            rejected_refunds,
+            "order_item_refunds",
+            run_id,
+            REJECTED_DIR,
+        )
         load_to_staging(transform_refunds(valid_refunds), "order_item_refunds", engine)
         metrics.record(len(refunds), len(valid_refunds), len(rejected_refunds))
 
