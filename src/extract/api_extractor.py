@@ -27,6 +27,12 @@ def extract_orders(
     max_attempts: int = 3,
     retry_delay_seconds: float = 1.0,
 ) -> pd.DataFrame:
+    """Extrait toutes les pages de commandes disponibles après un checkpoint.
+
+    Les appels HTTP temporaires en échec sont rejoués par
+    :func:`_request_orders_page`. Un DataFrame vide conserve toujours le schéma
+    attendu afin que les étapes suivantes du pipeline restent prévisibles.
+    """
     if (created_after is None) != (after_id is None):
         raise ValueError("created_after and after_id must be provided together")
     if max_attempts <= 0:
@@ -75,6 +81,7 @@ def _request_orders_page(
     max_attempts: int,
     retry_delay_seconds: float,
 ) -> requests.Response:
+    """Appelle une page de l'API avec retry ciblé et backoff exponentiel."""
     for attempt in range(1, max_attempts + 1):
         try:
             response = requests.get(url, params=params, timeout=30)
@@ -86,6 +93,8 @@ def _request_orders_page(
                 if error.response is not None
                 else None
             )
+            # Les erreurs 4xx sont définitives ; seules les pannes temporaires
+            # et les réponses serveur 5xx justifient une nouvelle tentative.
             is_temporary = isinstance(
                 error,
                 (requests.Timeout, requests.ConnectionError),
@@ -100,6 +109,7 @@ def _request_orders_page(
                 )
                 raise
 
+            # 1 s, 2 s, 4 s... selon le délai initial configuré.
             delay = retry_delay_seconds * (2 ** (attempt - 1))
             logger.warning(
                 "Orders API request failed attempt=%s/%s status=%s retry_in=%ss",

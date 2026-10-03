@@ -11,7 +11,11 @@ orders_df: pd.DataFrame | None = None
 
 
 def get_orders_df() -> pd.DataFrame:
-    """Charge la source au premier appel afin de garder le module importable sans données."""
+    """Charge les commandes au premier appel et les conserve ensuite en mémoire.
+
+    Le chargement différé permet notamment d'importer le module pendant les tests
+    automatisés, où le fichier source volontairement non versionné est absent.
+    """
     global orders_df
 
     if orders_df is not None:
@@ -28,6 +32,7 @@ def get_orders_df() -> pd.DataFrame:
 
 
 def serialize_orders(df: pd.DataFrame) -> list[dict]:
+    """Convertit un DataFrame de commandes en réponse JSON sérialisable."""
     serialized = df.copy()
     serialized["created_at"] = serialized["created_at"].map(
         lambda value: pd.Timestamp(value).isoformat()
@@ -42,6 +47,11 @@ def list_orders(
     created_after: datetime | None = None,
     after_id: int | None = None,
 ):
+    """Retourne une page de commandes située après le checkpoint fourni.
+
+    Le couple ``created_after`` et ``after_id`` évite de perdre des commandes
+    lorsque plusieurs lignes possèdent exactement le même horodatage.
+    """
     if (created_after is None) != (after_id is None):
         raise HTTPException(
             status_code=422,
@@ -56,6 +66,7 @@ def list_orders(
         if checkpoint_date.tzinfo is not None:
             checkpoint_date = checkpoint_date.tz_convert("UTC").tz_localize(None)
 
+        # Comparaison lexicographique du checkpoint : date d'abord, puis ID.
         filtered_orders = source_orders[
             (source_orders["created_at"] > checkpoint_date)
             | (
@@ -75,6 +86,7 @@ def list_orders(
 
 @app.get("/orders/{order_id}")
 def get_order(order_id: int):
+    """Retourne une commande unique ou une erreur HTTP 404."""
     source_orders = get_orders_df()
     row = source_orders[source_orders["order_id"] == order_id]
     if row.empty:

@@ -16,6 +16,7 @@ def load_to_staging(
     engine: Engine,
     if_exists: Literal["fail", "replace", "append"] = "replace",
 ) -> None:
+    """Charge un DataFrame dans une table du schéma PostgreSQL ``staging``."""
     logger.info(f"Loading {len(df)} rows into staging.{table_name}")
     df.to_sql(
         table_name,
@@ -31,7 +32,11 @@ def upsert_orders_with_watermark(
     df: pd.DataFrame,
     engine: Engine,
 ) -> Watermark | None:
-    """Charge les commandes et avance leur checkpoint dans une même transaction."""
+    """Effectue l'UPSERT des commandes et avance leur checkpoint atomiquement.
+
+    Si l'UPSERT ou l'écriture du checkpoint échoue, PostgreSQL annule toute la
+    transaction. La prochaine exécution peut ainsi reprendre sans perte.
+    """
     required_columns = {
         "order_id",
         "created_at",
@@ -104,6 +109,8 @@ def upsert_orders_with_watermark(
             ),
             records,
         )
+        # Le checkpoint est volontairement écrit dans la même transaction que
+        # les commandes : il ne doit jamais avancer avant leur chargement.
         set_watermark(
             connection,
             "orders",
@@ -124,6 +131,7 @@ def _ensure_orders_staging_table(
     df: pd.DataFrame,
     connection: Connection,
 ) -> None:
+    """Garantit l'existence de la table et de l'unicité de ``order_id``."""
     df.head(0).to_sql(
         "orders",
         connection,

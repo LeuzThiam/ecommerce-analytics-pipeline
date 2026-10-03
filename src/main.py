@@ -55,6 +55,7 @@ logger = logging.getLogger(__name__)
 
 
 def process_pageview_chunks(engine: Engine, metrics: PipelineRunMetrics) -> None:
+    """Valide, transforme et charge les pageviews lot par lot."""
     first_chunk = True
 
     for chunk_number, pageviews in enumerate(
@@ -68,6 +69,7 @@ def process_pageview_chunks(engine: Engine, metrics: PipelineRunMetrics) -> None
             len(valid_pageviews),
             len(rejected_pageviews),
         )
+        # Le premier lot reconstruit la table ; les suivants la complètent.
         load_to_staging(
             transform_pageviews(valid_pageviews),
             "website_pageviews",
@@ -86,6 +88,11 @@ def process_orders_incrementally(
     engine: Engine,
     metrics: PipelineRunMetrics,
 ) -> set[int]:
+    """Traite les nouvelles commandes et retourne tous les IDs déjà chargés.
+
+    Les métriques sont enregistrées uniquement après la réussite de l'UPSERT et
+    de la mise à jour atomique du checkpoint.
+    """
     watermark = get_watermark(engine, "orders")
     orders = extract_orders(
         ORDERS_API_BASE_URL,
@@ -108,6 +115,7 @@ def process_orders_incrementally(
 
 
 def run() -> None:
+    """Exécute le pipeline ETL complet et historise son résultat."""
     engine = create_engine(POSTGRES_URL)
     metrics = PipelineRunMetrics()
     run_id = start_pipeline_run(engine)
