@@ -53,6 +53,25 @@ La contrainte d'unicité sur `product_id` garantit le grain de la dimension.
 Son chargement utilise un UPSERT : une nouvelle exécution met à jour les
 attributs connus sans modifier la clé technique ni dupliquer le produit.
 
+## Dimension client
+
+`warehouse.dim_customer` contient une ligne par `user_id`. Dans les données
+disponibles, cet identifiant représente un utilisateur web plutôt qu'un profil
+nominatif : aucune information personnelle n'est inventée ou déduite.
+
+La dimension expose :
+
+- `customer_key`, la clé technique utilisée par les futures tables de faits ;
+- `user_id`, la clé métier commune aux sessions et aux commandes ;
+- les dates de première et dernière session ;
+- la date de première commande, lorsqu'elle existe ;
+- les indicateurs de session répétée et de statut acheteur.
+
+Le chargement agrège les sessions et les commandes avant l'UPSERT. Une union
+complète conserve aussi un éventuel acheteur absent de la source des sessions.
+La première validation réelle recense 394 318 utilisateurs, dont 31 696
+acheteurs.
+
 ## Tables de faits prévues
 
 ### Ventes
