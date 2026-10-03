@@ -4,6 +4,7 @@ import pandas as pd
 from .common_rules import not_null, is_unique, is_non_negative, split_valid_invalid, is_positive
 
 def validate_orders(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Valide les identifiants, quantités et montants des commandes."""
     masks = [
         is_unique(df, "order_id"),
         not_null(df, "website_session_id"),
