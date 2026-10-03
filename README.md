@@ -6,7 +6,7 @@ Projet réalisé en 3 versions progressives :
 
 - **V1 — Multi-Source ETL** *(terminée)* : extraction, validation, transformation et chargement en staging.
 - **V2 — Incremental & Reliable ETL** *(terminée)* : suivi des exécutions, checkpoints, idempotence, transactions, retry.
-- **V3 — Automated Analytics Warehouse** *(à venir)* : star schema, data marts, réconciliation.
+- **V3 — Automated Analytics Warehouse** *(en cours)* : star schema, data marts, réconciliation.
 
 ## Le problème
 
@@ -127,4 +127,5 @@ La validation réelle de deux exécutions consécutives est détaillée dans
 - V2 : quarantaine des lignes rejetées par source et par exécution *(terminé)*
 - V2 : tests de panne des sources CSV, JSON et PostgreSQL *(terminé)*
 - V2 : validation réelle de deux exécutions consécutives *(terminée)*
+- V3 : définition des grains et construction de `warehouse.dim_date` *(terminée)*
 - V3 : star schema (`fact_sales`, `fact_sessions`), data marts, réconciliation source ↔ entrepôt
