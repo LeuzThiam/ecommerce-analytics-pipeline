@@ -122,4 +122,5 @@ pytest -v
 - V2 : retry avec backoff exponentiel pour l'API Orders *(terminé)*
 - V2 : reprise après panne et tests de plusieurs exécutions *(terminé)*
 - V2 : quarantaine des lignes rejetées par source et par exécution *(terminé)*
+- V2 : tests de panne des sources CSV, JSON et PostgreSQL *(terminé)*
 - V3 : star schema (`fact_sales`, `fact_sessions`), data marts, réconciliation source ↔ entrepôt
