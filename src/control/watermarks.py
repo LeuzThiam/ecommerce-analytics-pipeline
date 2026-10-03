@@ -17,6 +17,7 @@ EMPTY_WATERMARK = Watermark(last_created_at=None, last_id=None)
 
 
 def ensure_watermarks_table(engine: Engine) -> None:
+    """Crée la table de checkpoints si elle n'existe pas encore."""
     statement = text(
         """
         CREATE TABLE IF NOT EXISTS control.etl_watermarks (
@@ -38,6 +39,7 @@ def get_watermark(
     source_name: str,
     pipeline_name: str = PIPELINE_NAME,
 ) -> Watermark:
+    """Retourne le dernier checkpoint d'une source ou un checkpoint vide."""
     ensure_watermarks_table(engine)
     statement = text(
         """
@@ -68,6 +70,7 @@ def update_watermark(
     last_id: int,
     pipeline_name: str = PIPELINE_NAME,
 ) -> None:
+    """Met à jour un checkpoint dans une transaction autonome."""
     if last_created_at is None or last_id is None:
         raise ValueError("A watermark requires both last_created_at and last_id")
 
@@ -89,7 +92,11 @@ def set_watermark(
     last_id: int,
     pipeline_name: str = PIPELINE_NAME,
 ) -> None:
-    """Enregistre un checkpoint dans une transaction déjà ouverte."""
+    """Enregistre un checkpoint dans une transaction déjà ouverte.
+
+    Cette variante permet au chargement des données et au checkpoint de partager
+    le même COMMIT ou le même ROLLBACK.
+    """
     if last_created_at is None or last_id is None:
         raise ValueError("A watermark requires both last_created_at and last_id")
 

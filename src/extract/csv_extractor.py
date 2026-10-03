@@ -7,12 +7,14 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 def extract_sessions(path: Path) -> pd.DataFrame:
+    """Charge entièrement le fichier CSV des sessions web."""
     logger.info(f"Extracting sessions from {path}")
     df = pd.read_csv(path)
     logger.info(f"Extracted {len(df)} sessions")
     return df
 
 def extract_pageviews(path: Path) -> pd.DataFrame:
+    """Charge entièrement les pageviews, principalement pour un usage ponctuel."""
     logger.info(f"Extracting pageviews from {path}")
     df = pd.read_csv(path)
     logger.info(f"Extracted {len(df)} pageviews")
@@ -23,6 +25,7 @@ def iter_pageview_chunks(
     path: Path,
     chunk_size: int = 100_000,
 ) -> Iterator[pd.DataFrame]:
+    """Produit les pageviews par lots sans charger le fichier complet en mémoire."""
     if chunk_size <= 0:
         raise ValueError("chunk_size must be greater than zero")
 

@@ -11,17 +11,20 @@ VALID_STATUSES = {"SUCCESS", "FAILED"}
 
 @dataclass
 class PipelineRunMetrics:
+    """Cumule les volumes traités pendant une exécution du pipeline."""
     rows_extracted: int = 0
     rows_loaded: int = 0
     rows_rejected: int = 0
 
     def record(self, extracted: int, loaded: int, rejected: int) -> None:
+        """Ajoute les métriques d'une source ou d'un lot aux totaux."""
         self.rows_extracted += extracted
         self.rows_loaded += loaded
         self.rows_rejected += rejected
 
 
 def ensure_pipeline_runs_table(engine: Engine) -> None:
+    """Crée la table d'historique des exécutions si nécessaire."""
     statement = text(
         """
         CREATE TABLE IF NOT EXISTS control.pipeline_runs (
@@ -44,6 +47,7 @@ def ensure_pipeline_runs_table(engine: Engine) -> None:
 
 
 def start_pipeline_run(engine: Engine, pipeline_name: str = PIPELINE_NAME) -> str:
+    """Crée une exécution au statut ``STARTED`` et retourne son identifiant."""
     ensure_pipeline_runs_table(engine)
     run_id = str(uuid4())
     statement = text(
@@ -67,6 +71,7 @@ def finish_pipeline_run(
     metrics: PipelineRunMetrics,
     error_message: str | None = None,
 ) -> None:
+    """Finalise une exécution avec son statut, ses métriques et son erreur."""
     if status not in VALID_STATUSES:
         raise ValueError(f"Unsupported pipeline status: {status}")
 
