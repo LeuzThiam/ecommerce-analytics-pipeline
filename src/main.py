@@ -10,7 +10,9 @@ from sqlalchemy.engine import Engine
 from src.control.pipeline_runs import (
     PipelineRunMetrics,
     finish_pipeline_run,
+    get_pipeline_step_summaries,
     start_pipeline_run,
+    track_pipeline_step,
 )
 from src.control.watermarks import get_watermark
 from src.extract.api_extractor import extract_orders
@@ -55,6 +57,31 @@ logging.basicConfig(
     ],
 )
 logger = logging.getLogger(__name__)
+
+
+def log_pipeline_summary(
+    engine: Engine,
+    run_id: str,
+    status: str,
+    metrics: PipelineRunMetrics,
+) -> None:
+    """Écrit un bilan compact du run et de chacune de ses étapes."""
+    lines = [
+        "================================================",
+        "ECOMMERCE ANALYTICS PIPELINE",
+        f"run_id={run_id} status={status}",
+        (
+            f"extracted={metrics.rows_extracted} "
+            f"loaded={metrics.rows_loaded} rejected={metrics.rows_rejected}"
+        ),
+    ]
+    for step in get_pipeline_step_summaries(engine, run_id):
+        lines.append(
+            f"{step.step_name}: status={step.status} "
+            f"duration={step.duration_seconds:.3f}s rows={step.rows_processed}"
+        )
+    lines.append("================================================")
+    logger.info("\n%s", "\n".join(lines))
 
 
 def process_pageview_chunks(
@@ -142,72 +169,99 @@ def run() -> str:
     logger.info(f"PIPELINE STARTED run_id={run_id}")
 
     try:
-        sessions = extract_sessions(DATA_SOURCE_DIR / "website_sessions.csv")
-        valid_sessions, rejected_sessions = validate_sessions(sessions)
-        logger.info(f"sessions: valid={len(valid_sessions)} rejected={len(rejected_sessions)}")
-        quarantine_rejected_rows(
-            rejected_sessions,
-            "website_sessions",
-            run_id,
-            REJECTED_DIR,
-        )
-        load_to_staging(transform_sessions(valid_sessions), "website_sessions", engine)
-        metrics.record(len(sessions), len(valid_sessions), len(rejected_sessions))
+        with track_pipeline_step(engine, run_id, "staging_sessions") as step:
+            sessions = extract_sessions(DATA_SOURCE_DIR / "website_sessions.csv")
+            valid_sessions, rejected_sessions = validate_sessions(sessions)
+            logger.info(
+                "sessions: valid=%s rejected=%s",
+                len(valid_sessions),
+                len(rejected_sessions),
+            )
+            quarantine_rejected_rows(
+                rejected_sessions, "website_sessions", run_id, REJECTED_DIR
+            )
+            load_to_staging(
+                transform_sessions(valid_sessions), "website_sessions", engine
+            )
+            metrics.record(len(sessions), len(valid_sessions), len(rejected_sessions))
+            step.record(len(valid_sessions))
 
-        process_pageview_chunks(engine, metrics, run_id)
+        with track_pipeline_step(engine, run_id, "staging_pageviews") as step:
+            loaded_before = metrics.rows_loaded
+            process_pageview_chunks(engine, metrics, run_id)
+            step.record(metrics.rows_loaded - loaded_before)
 
-        products = extract_products(DATA_SOURCE_DIR / "products.json")
-        valid_products, rejected_products = validate_products(products)
-        logger.info(f"products: valid={len(valid_products)} rejected={len(rejected_products)}")
-        quarantine_rejected_rows(
-            rejected_products,
-            "products",
-            run_id,
-            REJECTED_DIR,
-        )
-        load_to_staging(transform_products(valid_products), "products", engine)
-        metrics.record(len(products), len(valid_products), len(rejected_products))
+        with track_pipeline_step(engine, run_id, "staging_products") as step:
+            products = extract_products(DATA_SOURCE_DIR / "products.json")
+            valid_products, rejected_products = validate_products(products)
+            logger.info(
+                "products: valid=%s rejected=%s",
+                len(valid_products),
+                len(rejected_products),
+            )
+            quarantine_rejected_rows(
+                rejected_products, "products", run_id, REJECTED_DIR
+            )
+            load_to_staging(transform_products(valid_products), "products", engine)
+            metrics.record(len(products), len(valid_products), len(rejected_products))
+            step.record(len(valid_products))
 
-        staged_order_ids = process_orders_incrementally(engine, metrics, run_id)
-        order_items = extract_order_items(engine)
-        valid_items, rejected_items = validate_order_items(
-            order_items, staged_order_ids, set(valid_products["product_id"])
-        )
-        logger.info(f"order_items: valid={len(valid_items)} rejected={len(rejected_items)}")
-        quarantine_rejected_rows(
-            rejected_items,
-            "order_items",
-            run_id,
-            REJECTED_DIR,
-        )
-        load_to_staging(transform_order_items(valid_items), "order_items", engine)
-        metrics.record(len(order_items), len(valid_items), len(rejected_items))
+        with track_pipeline_step(engine, run_id, "staging_orders") as step:
+            loaded_before = metrics.rows_loaded
+            staged_order_ids = process_orders_incrementally(engine, metrics, run_id)
+            step.record(metrics.rows_loaded - loaded_before)
 
-        refunds = extract_refunds(engine)
-        valid_refunds, rejected_refunds = validate_refunds(
-            refunds, set(valid_items["order_item_id"]), staged_order_ids
-        )
-        logger.info(f"refunds: valid={len(valid_refunds)} rejected={len(rejected_refunds)}")
-        quarantine_rejected_rows(
-            rejected_refunds,
-            "order_item_refunds",
-            run_id,
-            REJECTED_DIR,
-        )
-        load_to_staging(transform_refunds(valid_refunds), "order_item_refunds", engine)
-        metrics.record(len(refunds), len(valid_refunds), len(rejected_refunds))
+        with track_pipeline_step(engine, run_id, "staging_order_items") as step:
+            order_items = extract_order_items(engine)
+            valid_items, rejected_items = validate_order_items(
+                order_items, staged_order_ids, set(valid_products["product_id"])
+            )
+            logger.info(
+                "order_items: valid=%s rejected=%s",
+                len(valid_items),
+                len(rejected_items),
+            )
+            quarantine_rejected_rows(
+                rejected_items, "order_items", run_id, REJECTED_DIR
+            )
+            load_to_staging(transform_order_items(valid_items), "order_items", engine)
+            metrics.record(len(order_items), len(valid_items), len(rejected_items))
+            step.record(len(valid_items))
 
-        # Le warehouse n'est déclaré prêt qu'après toutes les sources validées.
-        warehouse_result = build_warehouse(engine)
-        logger.info("WAREHOUSE READY run_id=%s volumes=%s", run_id, warehouse_result)
+        with track_pipeline_step(engine, run_id, "staging_refunds") as step:
+            refunds = extract_refunds(engine)
+            valid_refunds, rejected_refunds = validate_refunds(
+                refunds, set(valid_items["order_item_id"]), staged_order_ids
+            )
+            logger.info(
+                "refunds: valid=%s rejected=%s",
+                len(valid_refunds),
+                len(rejected_refunds),
+            )
+            quarantine_rejected_rows(
+                rejected_refunds, "order_item_refunds", run_id, REJECTED_DIR
+            )
+            load_to_staging(
+                transform_refunds(valid_refunds), "order_item_refunds", engine
+            )
+            metrics.record(len(refunds), len(valid_refunds), len(rejected_refunds))
+            step.record(len(valid_refunds))
+
+        with track_pipeline_step(engine, run_id, "warehouse_et_marts") as step:
+            # Le warehouse n'est déclaré prêt qu'après toutes les sources validées.
+            warehouse_result = build_warehouse(engine)
+            step.record(sum(warehouse_result.__dict__.values()))
+            logger.info("WAREHOUSE READY run_id=%s volumes=%s", run_id, warehouse_result)
 
         finish_pipeline_run(engine, run_id, "SUCCESS", metrics)
+        log_pipeline_summary(engine, run_id, "SUCCESS", metrics)
         logger.info(f"LOAD COMPLETED run_id={run_id}")
         return run_id
     except Exception as error:
         logger.exception(f"PIPELINE FAILED run_id={run_id}")
         try:
             finish_pipeline_run(engine, run_id, "FAILED", metrics, str(error))
+            log_pipeline_summary(engine, run_id, "FAILED", metrics)
         except Exception:
             logger.exception(f"FAILED TO UPDATE PIPELINE RUN run_id={run_id}")
         raise
