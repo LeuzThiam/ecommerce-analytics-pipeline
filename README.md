@@ -112,6 +112,9 @@ Pour une exécution planifiée avec Airflow sous Docker, suivre
 Le suivi détaillé des statuts, durées et volumes est présenté dans
 [`docs/monitoring.md`](docs/monitoring.md).
 
+Les cinq analyses métier finales et leur génération sont décrites dans
+[`docs/analyses-python.md`](docs/analyses-python.md).
+
 ## Tests
 
 ```bash
@@ -150,4 +153,5 @@ La validation réelle de deux exécutions consécutives est détaillée dans
 - V3 : mart spécialisé des remboursements *(terminé)*
 - V3 : orchestration quotidienne avec Airflow *(terminée)*
 - V3 : monitoring enrichi des exécutions *(terminé)*
-- V3 : analyses Python et clôture du projet
+- V3 : analyses Python *(terminées)*
+- Clôture : validation finale et publication de la version stable

@@ -1,0 +1,4 @@
+customer_status,customers,orders,lifetime_revenue_usd,lifetime_profit_usd,revenue_per_customer_usd
+acheteur,31105,31105,1782201.9300000002,1087368.12,57.29631666934577
+acheteur récurrent,591,1208,70969.13,43432.69,120.08313028764806
+prospect,362622,0,0.0,0.0,0.0
