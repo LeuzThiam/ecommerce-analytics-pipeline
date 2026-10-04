@@ -8,6 +8,7 @@ from src.marts.customer_summary import build_customer_summary
 from src.marts.funnel_performance import build_funnel_performance
 from src.marts.marketing_performance import build_marketing_performance
 from src.marts.product_performance import build_product_performance
+from src.marts.refunds_performance import build_refunds_performance
 from src.warehouse.dim_customer import build_dim_customer
 from src.warehouse.dim_date import build_dim_date_from_staging
 from src.warehouse.dim_device import build_dim_device
@@ -36,6 +37,7 @@ class WarehouseBuildResult:
     product_performance: int
     customer_summary: int
     funnel_performance: int
+    refunds_performance: int
 
 
 def build_warehouse(engine: Engine) -> WarehouseBuildResult:
@@ -60,6 +62,7 @@ def build_warehouse(engine: Engine) -> WarehouseBuildResult:
     product_performance_rows = build_product_performance(engine)
     customer_summary_rows = build_customer_summary(engine)
     funnel_performance_rows = build_funnel_performance(engine)
+    refunds_performance_rows = build_refunds_performance(engine)
 
     result = WarehouseBuildResult(
         dim_date=dim_date_rows,
@@ -74,6 +77,7 @@ def build_warehouse(engine: Engine) -> WarehouseBuildResult:
         product_performance=product_performance_rows,
         customer_summary=customer_summary_rows,
         funnel_performance=funnel_performance_rows,
+        refunds_performance=refunds_performance_rows,
     )
     logger.info("WAREHOUSE RECONCILIATION checks=%s", reconciliation.checks)
     logger.info("WAREHOUSE BUILD COMPLETED volumes=%s", result)
