@@ -109,6 +109,9 @@ python -m src.main
 Pour une exécution planifiée avec Airflow sous Docker, suivre
 [`docs/airflow.md`](docs/airflow.md).
 
+Le suivi détaillé des statuts, durées et volumes est présenté dans
+[`docs/monitoring.md`](docs/monitoring.md).
+
 ## Tests
 
 ```bash
@@ -146,4 +149,5 @@ La validation réelle de deux exécutions consécutives est détaillée dans
 - V3 : mart quotidien du funnel de conversion *(terminé)*
 - V3 : mart spécialisé des remboursements *(terminé)*
 - V3 : orchestration quotidienne avec Airflow *(terminée)*
-- V3 : monitoring enrichi des exécutions et analyses Python
+- V3 : monitoring enrichi des exécutions *(terminé)*
+- V3 : analyses Python et clôture du projet
