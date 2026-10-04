@@ -134,8 +134,8 @@ def process_orders_incrementally(
     )
 
 
-def run() -> None:
-    """Exécute le pipeline ETL complet et historise son résultat."""
+def run() -> str:
+    """Exécute le pipeline complet et retourne l'identifiant de son run."""
     engine = create_engine(POSTGRES_URL)
     metrics = PipelineRunMetrics()
     run_id = start_pipeline_run(engine)
@@ -203,6 +203,7 @@ def run() -> None:
 
         finish_pipeline_run(engine, run_id, "SUCCESS", metrics)
         logger.info(f"LOAD COMPLETED run_id={run_id}")
+        return run_id
     except Exception as error:
         logger.exception(f"PIPELINE FAILED run_id={run_id}")
         try:

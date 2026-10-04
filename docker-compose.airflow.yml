@@ -1,0 +1,26 @@
+services:
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    command: standalone
+    env_file:
+      - .env
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW_POSTGRES_HOST: ${AIRFLOW_POSTGRES_HOST:-host.docker.internal}
+      POSTGRES_HOST: ${AIRFLOW_POSTGRES_HOST:-host.docker.internal}
+      ORDERS_API_BASE_URL: ${AIRFLOW_ORDERS_API_BASE_URL:-http://host.docker.internal:8000}
+      PYTHONPATH: /opt/airflow/project
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/opt/airflow/project
+      - ./dags:/opt/airflow/dags
+      - airflow_home:/opt/airflow
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+volumes:
+  airflow_home:

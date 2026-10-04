@@ -106,6 +106,9 @@ Puis exécuter le pipeline complet :
 python -m src.main
 ```
 
+Pour une exécution planifiée avec Airflow sous Docker, suivre
+[`docs/airflow.md`](docs/airflow.md).
+
 ## Tests
 
 ```bash
@@ -142,3 +145,5 @@ La validation réelle de deux exécutions consécutives est détaillée dans
 - V3 : mart de synthèse et valeur client *(terminé)*
 - V3 : mart quotidien du funnel de conversion *(terminé)*
 - V3 : mart spécialisé des remboursements *(terminé)*
+- V3 : orchestration quotidienne avec Airflow *(terminée)*
+- V3 : monitoring enrichi des exécutions et analyses Python
