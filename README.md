@@ -1,12 +1,14 @@
 # E-commerce Analytics Data Platform
 
-Pipeline ETL multi-source construit en Python : extraction depuis 4 types de sources hétérogènes (CSV, JSON, API REST, PostgreSQL), validation, transformation et chargement dans un entrepôt PostgreSQL — avec logging, tests automatisés et orchestration en une seule commande.
+Plateforme analytique e-commerce construite en Python : ingestion multi-source,
+contrôles qualité, chargements incrémentaux, entrepôt en étoile, data marts,
+orchestration Airflow, monitoring et analyses métier reproductibles.
 
 Projet réalisé en 3 versions progressives :
 
 - **V1 — Multi-Source ETL** *(terminée)* : extraction, validation, transformation et chargement en staging.
 - **V2 — Incremental & Reliable ETL** *(terminée)* : suivi des exécutions, checkpoints, idempotence, transactions, retry.
-- **V3 — Automated Analytics Warehouse** *(en cours)* : star schema, data marts, réconciliation.
+- **V3 — Automated Analytics Warehouse** *(terminée)* : star schema, data marts, réconciliation, Airflow, monitoring et analyses Python.
 
 ## Le problème
 
@@ -15,13 +17,19 @@ Une entreprise e-commerce reçoit ses données depuis plusieurs systèmes qui ne
 ## Architecture
 
 ```
-                SOURCES
- CSV ──────┐
- JSON ─────┤
- API ──────┼────→ EXTRACT ──→ VALIDATE ──→ TRANSFORM ──→ STAGING
- SQL ──────┘                                                   │
-                                                                ↓
-                                                   DIMENSIONS ──→ FAITS
+SOURCES → EXTRACTION → VALIDATION → TRANSFORMATION → STAGING
+                                                     │
+                                                     ↓
+                                           DIMENSIONS ET FAITS
+                                                     │
+                                                     ↓
+                                                DATA MARTS
+                                                     │
+                                      ┌──────────────┴──────────────┐
+                                      ↓                             ↓
+                                ANALYSES PYTHON               POWER BI PRÊT
+
+AIRFLOW → ORCHESTRATION    CONTROL → CHECKPOINTS ET MONITORING
 ```
 
 Chaque type de source a son propre extracteur (`src/extract/`), chaque entité a ses propres règles de validation (`src/validation/`) et sa propre transformation (`src/transform/`), et un loader générique unique (`src/load/`) écrit le résultat dans PostgreSQL. `src/main.py` orchestre l'ensemble.
@@ -35,8 +43,10 @@ Chaque type de source a son propre extracteur (`src/extract/`), chaque entité a
 | Base de données | PostgreSQL, SQLAlchemy |
 | Tests | pytest |
 | Logging | module `logging` (console + fichier) |
+| Orchestration | Apache Airflow, Docker Compose |
+| Visualisation | Matplotlib |
 
-## Résultats (V1)
+## Volumes traités
 
 Le pipeline traite ~1,7 million de lignes au total, réparties sur 6 entités, avec un taux de rejet de 0% sur ce jeu de données :
 
@@ -57,15 +67,23 @@ ecommerce-analytics-pipeline/
 │   ├── source/          # sources fichiers (CSV, JSON) — non versionné, voir Installation
 │   └── rejected/         # lignes rejetées par la validation
 ├── src/
-│   ├── extract/           # un extracteur par type de source (CSV, JSON, API, SQL)
-│   ├── validation/        # règles de validation par entité + règles génériques réutilisables
-│   ├── transform/          # une transformation par entité (dates, types, mesures calculées)
-│   ├── load/               # chargement générique vers PostgreSQL
-│   └── main.py              # orchestration du pipeline complet
+│   ├── extract/           # extraction CSV, JSON, API et SQL
+│   ├── validation/        # règles qualité et quarantaine
+│   ├── transform/         # normalisation et mesures calculées
+│   ├── load/              # chargements staging et UPSERT
+│   ├── control/           # checkpoints et suivi des exécutions
+│   ├── warehouse/         # dimensions, faits et réconciliation
+│   ├── marts/             # six tables analytiques spécialisées
+│   ├── orchestration/     # contrôles avant exécution
+│   ├── analysis/          # analyses métier et graphiques
+│   └── main.py            # orchestration Python complète
 ├── api/
-│   └── orders_api.py    # API REST locale simulant la source "orders"
-├── tests/                # suite de tests pytest
-└── logs/                 # logs d'exécution du pipeline
+│   └── orders_api.py      # API REST locale simulant la source orders
+├── dags/                  # DAG Airflow quotidien
+├── docs/                  # guides techniques et validations
+├── reports/analysis/      # résultats CSV, PNG et synthèse métier
+├── tests/                 # 109 tests automatisés
+└── logs/                  # logs d'exécution du pipeline
 ```
 
 ## Installation
@@ -124,7 +142,7 @@ pytest -v
 La validation réelle de deux exécutions consécutives est détaillée dans
 [`docs/validation-v2.md`](docs/validation-v2.md).
 
-## Prochaines étapes
+## État d'avancement
 
 - V2 : suivi des exécutions dans `control.pipeline_runs` *(terminé)*
 - V2 : stockage des checkpoints dans `control.etl_watermarks` *(terminé)*
@@ -154,4 +172,6 @@ La validation réelle de deux exécutions consécutives est détaillée dans
 - V3 : orchestration quotidienne avec Airflow *(terminée)*
 - V3 : monitoring enrichi des exécutions *(terminé)*
 - V3 : analyses Python *(terminées)*
-- Clôture : validation finale et publication de la version stable
+
+Les 50 étapes prévues dans le plan initial sont terminées. Le projet est prêt
+à être présenté comme une plateforme analytique Python de bout en bout.
