@@ -1,0 +1,5 @@
+product_id,product_name,orders,units_sold,net_revenue_usd,net_profit_usd,gross_margin_rate,refund_rate
+1,The Original Mr. Fuzzy,24226,24226,1149220.11,677055.37,0.6101,0.0511
+2,The Forever Love Bear,5796,5796,339963.33,209611.29,0.6251,0.0223
+3,The Birthday Sugar Panda,4985,4985,215417.16,143184.51,0.6849,0.0604
+4,The Hudson River Mini bear,5018,5018,148570.46,100949.64,0.6836,0.0128
