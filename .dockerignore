@@ -1,0 +1,10 @@
+.git
+.github
+.pytest_cache
+.tmp-notes-render
+venv
+__pycache__
+*.pyc
+.env
+logs
+data
