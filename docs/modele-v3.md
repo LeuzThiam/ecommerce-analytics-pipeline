@@ -234,3 +234,14 @@ jamais compter deux fois une même visite à une étape. La commande repose sur
 `fact_sessions.is_converted`, et non sur la seule présence d'une page de
 confirmation. Le mart calcule le taux de passage de chaque étape à la suivante
 ainsi que le taux de conversion global.
+
+## Mart des remboursements
+
+`marts.refunds_performance` fournit une ligne par produit et compare le nombre
+d'articles vendus au nombre d'articles remboursés. Les premières et dernières
+dates utilisent la date effective du remboursement.
+
+Le mart expose le montant total et moyen des remboursements, le revenu restant,
+le taux de remboursement en unités et le poids des remboursements dans les
+ventes brutes. La dimension produit pilote les jointures afin de conserver un
+produit même en l'absence de remboursement.
