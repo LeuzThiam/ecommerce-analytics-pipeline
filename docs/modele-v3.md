@@ -222,3 +222,15 @@ commandes et articles, le panier moyen, les remboursements, le revenu et le
 profit cumulés, ainsi que le délai entre première session et première commande.
 Le statut distingue les prospects, acheteurs et acheteurs récurrents. Cette
 table prépare les futures analyses de valeur client et de segmentation RFM.
+
+## Mart du funnel
+
+`marts.funnel_performance` fournit une ligne par date pour suivre les sessions
+qui atteignent successivement la liste des produits, une fiche produit, le
+panier, la livraison, la facturation et la commande.
+
+Les URL sont d'abord réduites à des indicateurs booléens par session afin de ne
+jamais compter deux fois une même visite à une étape. La commande repose sur
+`fact_sessions.is_converted`, et non sur la seule présence d'une page de
+confirmation. Le mart calcule le taux de passage de chaque étape à la suivante
+ainsi que le taux de conversion global.

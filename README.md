@@ -140,4 +140,5 @@ La validation réelle de deux exécutions consécutives est détaillée dans
 - V3 : mart de performance par canal marketing *(terminé)*
 - V3 : mart de performance par produit *(terminé)*
 - V3 : mart de synthèse et valeur client *(terminé)*
-- V3 : marts funnel et remboursements
+- V3 : mart quotidien du funnel de conversion *(terminé)*
+- V3 : mart spécialisé des remboursements
